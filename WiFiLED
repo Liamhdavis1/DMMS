@@ -1,0 +1,61 @@
+#include <WiFi.h>
+#include <WiFiAP.h>
+
+#define LED_PIN 2  // Onboard LED on many ESP32 DevKit boards
+
+const char* ap_ssid = "ESP32_LED_Control";
+const char* ap_password = "12345678";
+
+WiFiServer server(5000);
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  Serial.println("Starting ESP32 Wi-Fi access point...");
+
+  WiFi.softAP(ap_ssid, ap_password);
+
+  Serial.println();
+  Serial.print("Wi-Fi network: ");
+  Serial.println(ap_ssid);
+  Serial.print("Password: ");
+  Serial.println(ap_password);
+  Serial.print("ESP32 IP address for PySide6: ");
+  Serial.println(WiFi.softAPIP());
+  Serial.println("TCP server port: 5000");
+
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available();
+
+  if (client) {
+    Serial.println("PySide6 computer connected");
+
+    while (client.connected()) {
+      if (client.available()) {
+        String command = client.readStringUntil('\n');
+        command.trim();
+
+        Serial.print("Received command: ");
+        Serial.println(command);
+
+        if (command == "LED_ON") {
+          digitalWrite(LED_PIN, HIGH);
+          client.println("LED_IS_ON");
+        }
+        else if (command == "LED_OFF") {
+          digitalWrite(LED_PIN, LOW);
+          client.println("LED_IS_OFF");
+        }
+      }
+    }
+
+    client.stop();
+    Serial.println("PySide6 computer disconnected");
+  }
+}
