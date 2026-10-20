@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>472</height>
+    <width>742</width>
+    <height>477</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,8 +27,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>641</width>
-     <height>481</height>
+     <width>741</width>
+     <height>471</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -43,8 +43,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>641</width>
-       <height>471</height>
+       <width>741</width>
+       <height>499</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -153,6 +153,11 @@ background-color: rgb(15, 75, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">color: rgb(235, 235, 235);
 background-color: rgb(15, 75, 235);
@@ -161,6 +166,9 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="text">
            <string>Connect to ESP32</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
           <property name="autoDefault">
            <bool>true</bool>
@@ -213,7 +221,7 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
-            <width>2</width>
+            <width>80</width>
             <height>20</height>
            </size>
           </property>
@@ -227,6 +235,11 @@ selection-background-color: rgb(235, 235, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">color: rgb(235, 235, 235);
 background-color: rgb(15, 75, 235);
@@ -235,6 +248,9 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="text">
            <string>-</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -248,7 +264,7 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="maximumSize">
            <size>
-            <width>300</width>
+            <width>400</width>
             <height>16777215</height>
            </size>
           </property>
@@ -282,6 +298,11 @@ gridline-color: rgb(15, 75, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">color: rgb(235, 235, 235);
 background-color: rgb(15, 75, 235);
@@ -303,7 +324,7 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
-            <width>2</width>
+            <width>80</width>
             <height>20</height>
            </size>
           </property>
@@ -366,6 +387,11 @@ selection-background-color: rgb(235, 235, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">color: rgb(235, 235, 235);
 background-color: rgb(15, 75, 235);
@@ -374,6 +400,9 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="text">
            <string>LED On</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -398,6 +427,11 @@ selection-background-color: rgb(235, 235, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">color: rgb(235, 235, 235);
 background-color: rgb(15, 75, 235);
@@ -406,6 +440,9 @@ selection-background-color: rgb(235, 235, 235);</string>
           </property>
           <property name="text">
            <string>LED Off</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -432,7 +469,7 @@ selection-background-color: rgb(235, 235, 235);</string>
         <property name="sizeHint" stdset="0">
          <size>
           <width>40</width>
-          <height>20</height>
+          <height>40</height>
          </size>
         </property>
        </spacer>
@@ -463,12 +500,20 @@ selection-background-color: rgb(235, 235, 235);</string>
             <height>30</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">background-color: rgb(255, 0, 4);
 color: rgb(255, 255, 255);</string>
           </property>
           <property name="text">
            <string>STOP</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -536,6 +581,19 @@ color: rgb(255, 255, 255);</string>
         </item>
        </layout>
       </item>
+      <item>
+       <spacer name="horizontalSpacer_17">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
     </widget>
    </widget>
@@ -545,7 +603,7 @@ color: rgb(255, 255, 255);</string>
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>641</width>
+       <width>742</width>
        <height>471</height>
       </rect>
      </property>
