@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
+    QMetaObject, QObject, QPoint,
     QSize, QTime, QUrl, Qt)
 from PySide6.QtNetwork import QTcpSocket
 from PySide6.QtWidgets import (QApplication, QDialog, QFrame, QGraphicsView,
@@ -63,12 +63,6 @@ class Ui_StringTheory(object):
         self.configure_navigation_link(
             self.label_14, "User Guide", "guide"
         )
-        self.configure_navigation_link(
-            self.label_9, "Control Panel", "control"
-        )
-        self.configure_navigation_link(
-            self.label_13, "User Guide", "guide"
-        )
 
         self.stackedWidget.setCurrentWidget(self.controlPage)
         self.update_status_display()
@@ -82,81 +76,86 @@ class Ui_StringTheory(object):
 
         self.stackedWidget = QStackedWidget(StringTheory)
         self.stackedWidget.setObjectName(u"stackedWidget")
-        self.stackedWidget.setGeometry(QRect(0, 0, 741, 471))
         self.stackedWidget.setStyleSheet(u"background-color: rgb(235, 235, 235);")
-        self.controlPage = QWidget()
-        self.controlPage.setObjectName(u"controlPage")
-        self.verticalLayoutWidget = QWidget(self.controlPage)
-        self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 741, 471))
-        self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        stackedWidgetSizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.stackedWidget.setSizePolicy(stackedWidgetSizePolicy)
 
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_5.setSpacing(0)
+        self.windowLayout = QVBoxLayout(StringTheory)
+        self.windowLayout.setObjectName(u"windowLayout")
+        self.windowLayout.setContentsMargins(0, 0, 0, 0)
+        self.windowLayout.setSpacing(0)
+
+        self.navigationBar = QWidget(StringTheory)
+        self.navigationBar.setObjectName(u"navigationBar")
+        self.navigationLayout = QVBoxLayout(self.navigationBar)
+        self.navigationLayout.setObjectName(u"navigationLayout")
+        self.navigationLayout.setContentsMargins(0, 0, 0, 0)
+        self.navigationLayout.setSpacing(0)
+
+        self.navigationLinksLayout = QHBoxLayout()
+        self.navigationLinksLayout.setObjectName(u"navigationLinksLayout")
+        self.navigationLinksLayout.setContentsMargins(0, 0, 0, 0)
+        self.navigationLinksLayout.setSpacing(0)
+        self.navigationLinksLayout.setStretch(0, 1)
+        self.navigationLinksLayout.setStretch(1, 1)
 
         font = QFont()
         font.setPointSize(14)
 
-        self.label_10 = QLabel(self.verticalLayoutWidget)
+        self.label_10 = QLabel(self.navigationBar)
         self.label_10.setObjectName(u"label_10")
-        self.label_10.setMaximumSize(QSize(16777215, 40))
         self.label_10.setFont(font)
-        self.label_10.setStyleSheet(u"color: rgb(15, 75, 235);")
+        self.label_10.setStyleSheet(
+            u"color: rgb(15, 75, 235);"
+            u"padding: 0 12px;"
+        )
         self.label_10.setAlignment(Qt.AlignCenter)
         self.label_10.setFixedHeight(40)
-        self.horizontalLayout_5.addWidget(self.label_10)
+        self.navigationLinksLayout.addWidget(self.label_10)
 
-        self.label_14 = QLabel(self.verticalLayoutWidget)
+        self.label_14 = QLabel(self.navigationBar)
         self.label_14.setObjectName(u"label_14")
-        self.label_14.setMaximumSize(QSize(16777215, 40))
         self.label_14.setFont(font)
-        self.label_14.setStyleSheet(u"color: rgb(15, 75, 235);")
+        self.label_14.setStyleSheet(
+            u"color: rgb(15, 75, 235);"
+            u"padding: 0 12px;"
+        )
         self.label_14.setAlignment(Qt.AlignCenter)
         self.label_14.setFixedHeight(40)
-        self.horizontalLayout_5.addWidget(self.label_14)
+        self.navigationLinksLayout.addWidget(self.label_14)
 
-        self.verticalLayout.addLayout(self.horizontalLayout_5)
-        # self.horizontalLayout_5 = QHBoxLayout()
-        # self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        # self.label_10 = QLabel(self.verticalLayoutWidget)
-        # self.label_10.setObjectName(u"label_10")
-        # self.label_10.setMaximumSize(QSize(16777215, 40))
-        # font = QFont()
-        # font.setPointSize(14)
-        # self.label_10.setFont(font)
-        # self.label_10.setStyleSheet(u"color: rgb(15, 75, 235);")
-        # self.label_10.setAlignment(Qt.AlignCenter)
-        # self.label_10.setFixedHeight(40)
+        self.navigationLayout.addLayout(self.navigationLinksLayout)
 
-        # self.horizontalLayout_5.addWidget(self.label_10)
-        # self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
-        # self.horizontalLayout_5.setSpacing(0)
+        self.navigationSeparator = QFrame(self.navigationBar)
+        self.navigationSeparator.setObjectName(u"navigationSeparator")
+        self.navigationSeparator.setStyleSheet(
+            u"color: rgb(15, 75, 235);"
+            u"background-color: rgb(15, 75, 235);"
+        )
+        self.navigationSeparator.setFrameShape(QFrame.Shape.HLine)
+        self.navigationSeparator.setFrameShadow(QFrame.Shadow.Sunken)
+        self.navigationSeparator.setFixedHeight(2)
+        self.navigationLayout.addWidget(self.navigationSeparator)
 
-        # self.label_14 = QLabel(self.verticalLayoutWidget)
-        # self.label_14.setObjectName(u"label_14")
-        # self.label_14.setMaximumSize(QSize(16777215, 40))
-        # self.label_14.setFont(font)
-        # self.label_14.setStyleSheet(u"color: rgb(15, 75, 235);")
-        # self.label_14.setAlignment(Qt.AlignCenter)
-        # self.label_14.setFixedHeight(40)
+        self.windowLayout.addWidget(self.navigationBar)
+        self.windowLayout.addWidget(self.stackedWidget)
 
-        # self.horizontalLayout_5.addWidget(self.label_14)
+        self.controlPage = QWidget()
+        self.controlPage.setObjectName(u"controlPage")
+        self.controlPageLayout = QVBoxLayout(self.controlPage)
+        self.controlPageLayout.setObjectName(u"controlPageLayout")
+        self.controlPageLayout.setContentsMargins(0, 0, 0, 0)
+        self.controlPageLayout.setSpacing(0)
 
-        # self.verticalLayout.addLayout(self.horizontalLayout_5)
-
-        self.line = QFrame(self.verticalLayoutWidget)
-        self.line.setObjectName(u"line")
-        self.line.setStyleSheet(u"color: rgb(15, 75, 235);\n"
-"background-color: rgb(15, 75, 235);")
-        self.line.setFrameShape(QFrame.Shape.HLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
-        self.line.setFixedHeight(2)
-
-        self.verticalLayout.addWidget(self.line)
+        self.verticalLayoutWidget = QWidget(self.controlPage)
+        self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
+        self.verticalLayoutWidget.setSizePolicy(stackedWidgetSizePolicy)
+        self.controlPageLayout.addWidget(self.verticalLayoutWidget)
+        self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
 
         self.horizontalSpacer_10 = QSpacerItem(40, 34, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
@@ -174,10 +173,10 @@ class Ui_StringTheory(object):
         font1 = QFont()
         font1.setPointSize(12)
         self.pushButton.setFont(font1)
-        self.pushButton.setStyleSheet(u"color: rgb(235, 235, 235);\n"
-"background-color: rgb(15, 75, 235);\n"
-"selection-color: rgb(15, 75, 235);\n"
-"selection-background-color: rgb(235, 235, 235);")
+        self.pushButton.setStyleSheet(u"color: rgb(235, 235, 235);"
+                                        "background-color: rgb(15, 75, 235);"
+                                        "selection-color: rgb(15, 75, 235);"
+                                        "selection-background-color: rgb(235, 235, 235);")
         self.pushButton.setCheckable(True)
         self.pushButton.setAutoDefault(True)
         self.pushButton.setFlat(False)
@@ -205,10 +204,10 @@ class Ui_StringTheory(object):
         self.pushButton_2.setObjectName(u"pushButton_2")
         self.pushButton_2.setMaximumSize(QSize(30, 30))
         self.pushButton_2.setFont(font1)
-        self.pushButton_2.setStyleSheet(u"color: rgb(235, 235, 235);\n"
-"background-color: rgb(15, 75, 235);\n"
-"selection-color: rgb(15, 75, 235);\n"
-"selection-background-color: rgb(235, 235, 235);")
+        self.pushButton_2.setStyleSheet(u"color: rgb(235, 235, 235);"
+                                        "background-color: rgb(15, 75, 235);"
+                                        "selection-color: rgb(15, 75, 235);"
+                                        "selection-background-color: rgb(235, 235, 235);")
         self.pushButton_2.setCheckable(False)
 
         self.horizontalLayout_3.addWidget(self.pushButton_2)
@@ -222,9 +221,9 @@ class Ui_StringTheory(object):
         self.horizontalSlider.setSizePolicy(sizePolicy)
         self.horizontalSlider.setMaximumSize(QSize(400, 16777215))
         self.horizontalSlider.setAutoFillBackground(False)
-        self.horizontalSlider.setStyleSheet(u"color: rgb(15, 75, 235);\n"
-"border-color: rgb(15, 75, 235);\n"
-"gridline-color: rgb(15, 75, 235);")
+        self.horizontalSlider.setStyleSheet(u"color: rgb(15, 75, 235);"
+                                            "border-color: rgb(15, 75, 235);"
+                                            "gridline-color: rgb(15, 75, 235);")
         self.horizontalSlider.setMaximum(150)
         self.horizontalSlider.setOrientation(Qt.Horizontal)
         self.horizontalSlider.setInvertedAppearance(False)
@@ -236,10 +235,10 @@ class Ui_StringTheory(object):
         self.pushButton_3.setObjectName(u"pushButton_3")
         self.pushButton_3.setMaximumSize(QSize(30, 30))
         self.pushButton_3.setFont(font1)
-        self.pushButton_3.setStyleSheet(u"color: rgb(235, 235, 235);\n"
-"background-color: rgb(15, 75, 235);\n"
-"selection-color: rgb(15, 75, 235);\n"
-"selection-background-color: rgb(235, 235, 235);")
+        self.pushButton_3.setStyleSheet(u"color: rgb(235, 235, 235);"
+                                        "background-color: rgb(15, 75, 235);"
+                                        "selection-color: rgb(15, 75, 235);"
+                                        "selection-background-color: rgb(235, 235, 235);")
 
         self.horizontalLayout_3.addWidget(self.pushButton_3)
 
@@ -272,10 +271,10 @@ class Ui_StringTheory(object):
         self.pushButton_4.setObjectName(u"pushButton_4")
         self.pushButton_4.setMaximumSize(QSize(16777215, 30))
         self.pushButton_4.setFont(font1)
-        self.pushButton_4.setStyleSheet(u"color: rgb(235, 235, 235);\n"
-"background-color: rgb(15, 75, 235);\n"
-"selection-color: rgb(15, 75, 235);\n"
-"selection-background-color: rgb(235, 235, 235);")
+        self.pushButton_4.setStyleSheet(u"color: rgb(235, 235, 235);"
+                                        "background-color: rgb(15, 75, 235);"
+                                        "selection-color: rgb(15, 75, 235);"
+                                        "selection-background-color: rgb(235, 235, 235);")
         self.pushButton_4.setCheckable(True)
 
         self.horizontalLayout_6.addWidget(self.pushButton_4)
@@ -288,10 +287,10 @@ class Ui_StringTheory(object):
         self.pushButton_5.setObjectName(u"pushButton_5")
         self.pushButton_5.setMaximumSize(QSize(16777215, 30))
         self.pushButton_5.setFont(font1)
-        self.pushButton_5.setStyleSheet(u"color: rgb(235, 235, 235);\n"
-"background-color: rgb(15, 75, 235);\n"
-"selection-color: rgb(15, 75, 235);\n"
-"selection-background-color: rgb(235, 235, 235);")
+        self.pushButton_5.setStyleSheet(u"color: rgb(235, 235, 235);"
+                                        "background-color: rgb(15, 75, 235);"
+                                        "selection-color: rgb(15, 75, 235);"
+                                        "selection-background-color: rgb(235, 235, 235);")
         self.pushButton_5.setCheckable(True)
 
         self.horizontalLayout_6.addWidget(self.pushButton_5)
@@ -317,8 +316,8 @@ class Ui_StringTheory(object):
         self.pushButton_6.setObjectName(u"pushButton_6")
         self.pushButton_6.setMaximumSize(QSize(150, 30))
         self.pushButton_6.setFont(font1)
-        self.pushButton_6.setStyleSheet(u"background-color: rgb(255, 0, 4);\n"
-"color: rgb(0, 0, 0);")
+        self.pushButton_6.setStyleSheet(u"background-color: rgb(255, 0, 4);"
+                                        "color: rgb(0, 0, 0);")
         self.pushButton_6.setCheckable(True)
 
         self.horizontalLayout_7.addWidget(self.pushButton_6)
@@ -355,71 +354,21 @@ class Ui_StringTheory(object):
         self.verticalLayout.addItem(self.horizontalSpacer_17)
 
         self.stackedWidget.addWidget(self.controlPage)
+
         self.guidePage = QWidget()
         self.guidePage.setObjectName(u"guidePage")
+        self.guidePageLayout = QVBoxLayout(self.guidePage)
+        self.guidePageLayout.setObjectName(u"guidePageLayout")
+        self.guidePageLayout.setContentsMargins(0, 0, 0, 0)
+        self.guidePageLayout.setSpacing(0)
+
         self.verticalLayoutWidget_2 = QWidget(self.guidePage)
         self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
-        self.verticalLayoutWidget_2.setGeometry(QRect(0, 0, 741, 471))
+        self.verticalLayoutWidget_2.setSizePolicy(stackedWidgetSizePolicy)
+        self.guidePageLayout.addWidget(self.verticalLayoutWidget_2)
         self.verticalLayout_3 = QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_10 = QHBoxLayout()
-        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-        self.horizontalLayout_10.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_10.setSpacing(0)
-
-        self.label_9 = QLabel(self.verticalLayoutWidget_2)
-        self.label_9.setObjectName(u"label_9")
-        self.label_9.setMaximumSize(QSize(16777215, 40))
-        self.label_9.setFont(font)
-        self.label_9.setStyleSheet(u"color: rgb(15, 75, 235);")
-        self.label_9.setAlignment(Qt.AlignCenter)
-        self.label_9.setFixedHeight(40)
-        self.horizontalLayout_10.addWidget(self.label_9)
-
-        self.label_13 = QLabel(self.verticalLayoutWidget_2)
-        self.label_13.setObjectName(u"label_13")
-        self.label_13.setMaximumSize(QSize(16777215, 40))
-        self.label_13.setFont(font)
-        self.label_13.setStyleSheet(u"color: rgb(15, 75, 235);")
-        self.label_13.setAlignment(Qt.AlignCenter)
-        self.label_13.setFixedHeight(40)
-        self.horizontalLayout_10.addWidget(self.label_13)
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_10)
-        # self.horizontalLayout_10 = QHBoxLayout()
-        # self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-
-        # self.label_9 = QLabel(self.verticalLayoutWidget_2)
-        # self.label_9.setObjectName(u"label_9")
-        # self.label_9.setMaximumSize(QSize(16777215, 40))
-        # self.label_9.setFont(font)
-        # self.label_9.setStyleSheet(u"color: rgb(15, 75, 235);")
-        # self.label_9.setAlignment(Qt.AlignCenter)
-        # self.label_9.setFixedHeight(40)
-
-        # self.horizontalLayout_10.addWidget(self.label_9)
-        # self.horizontalLayout_10.setContentsMargins(0, 0, 0, 0)
-        # self.horizontalLayout_10.setSpacing(0)
-        # self.label_13 = QLabel(self.verticalLayoutWidget_2)
-        # self.label_13.setObjectName(u"label_13")
-        # self.label_13.setMaximumSize(QSize(16777215, 40))
-        # self.label_13.setFont(font)
-        # self.label_13.setStyleSheet(u"color: rgb(15, 75, 235);")
-        # self.label_13.setAlignment(Qt.AlignCenter)
-        # self.label_13.setFixedHeight(40)
-        # self.horizontalLayout_10.addWidget(self.label_13)
-        # self.verticalLayout_3.addLayout(self.horizontalLayout_10)
-
-        self.line_2 = QFrame(self.verticalLayoutWidget_2)
-        self.line_2.setObjectName(u"line_2")
-        self.line_2.setStyleSheet(u"color: rgb(15, 75, 235);\n"
-    "background-color: rgb(15, 75, 235);")
-        self.line_2.setFrameShape(QFrame.Shape.HLine)
-        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
-        self.line_2.setFixedHeight(2)
-
-        self.verticalLayout_3.addWidget(self.line_2)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -509,8 +458,6 @@ class Ui_StringTheory(object):
         self.pushButton_4.setText(QCoreApplication.translate("StringTheory", u"LED On", None))
         self.pushButton_5.setText(QCoreApplication.translate("StringTheory", u"LED Off", None))
         self.pushButton_6.setText(QCoreApplication.translate("StringTheory", u"STOP", None))
-        self.label_9.setText(QCoreApplication.translate("StringTheory", u"Control Panel", None))
-        self.label_13.setText(QCoreApplication.translate("StringTheory", u"User Guide", None))
         self.label_11.setText(QCoreApplication.translate("StringTheory", u"Connect to the string launcher by connecting to WiFi:\n"
 "1. Enter WiFi settings on your device\n"
 "2. Select \u201cStringTheory\u201d\n"
