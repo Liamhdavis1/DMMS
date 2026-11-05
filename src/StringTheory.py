@@ -12,7 +12,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from src import Images_rc
+import Images_rc
 
 
 class Ui_StringTheory(object):
@@ -53,8 +53,20 @@ class Ui_StringTheory(object):
             button.setDefault(False)
 
         self.pushButton.clicked.connect(self.connect_to_esp32)
+        self.pushButton_2.clicked.connect(
+            lambda: self.horizontalSlider.setValue(
+                self.horizontalSlider.value() - 10
+            )
+        )
+        self.pushButton_3.clicked.connect(
+            lambda: self.horizontalSlider.setValue(
+                self.horizontalSlider.value() + 10
+            )
+        )
+        self.horizontalSlider.valueChanged.connect(self.on_velocity_changed)
         self.pushButton_4.clicked.connect(self.send_led_on)
         self.pushButton_5.clicked.connect(self.send_led_off)
+        self.pushButton_6.clicked.connect(self.stop_motor)
 
         # Make the existing headings clickable on BOTH pages.
         self.configure_navigation_link(
@@ -65,7 +77,32 @@ class Ui_StringTheory(object):
         )
 
         self.stackedWidget.setCurrentWidget(self.controlPage)
+        self.horizontalSlider.setValue(0)
+        self.update_velocity_display(0)
+
+        # Motor temperature display
+        self.motor_temperature = None
+
+        self.temperature_label = QLabel(
+            "Motor Temperature: Waiting for data...",
+            self.verticalLayoutWidget
+        )
+        self.temperature_label.setAlignment(Qt.AlignCenter)
+        self.temperature_label.setStyleSheet(
+            "color: rgb(15, 75, 235);"
+            "font-size: 12pt;"
+        )
+        self.temperature_label.setMinimumHeight(30)
+
+        # Place the temperature underneath the speed display
+        speed_index = self.verticalLayout.indexOf(self.label_2)
+        self.verticalLayout.insertWidget(
+            speed_index + 1,
+            self.temperature_label
+        )
+
         self.update_status_display()
+
 
     def setupUi(self, StringTheory):
         if not StringTheory.objectName():
@@ -454,7 +491,7 @@ class Ui_StringTheory(object):
         self.pushButton.setText(QCoreApplication.translate("StringTheory", u"Connect to ESP32", None))
         self.pushButton_2.setText(QCoreApplication.translate("StringTheory", u"-", None))
         self.pushButton_3.setText(QCoreApplication.translate("StringTheory", u"+", None))
-        self.label_2.setText(QCoreApplication.translate("StringTheory", u"RPM: QAbstractSlider", None))
+        self.label_2.setText(QCoreApplication.translate("StringTheory", u"Speed: 0 rps", None))
         self.pushButton_4.setText(QCoreApplication.translate("StringTheory", u"LED On", None))
         self.pushButton_5.setText(QCoreApplication.translate("StringTheory", u"LED Off", None))
         self.pushButton_6.setText(QCoreApplication.translate("StringTheory", u"STOP", None))
@@ -537,6 +574,20 @@ class Ui_StringTheory(object):
     def send_led_off(self):
         self.send_command("LED_OFF")
 
+    def update_velocity_display(self, velocity):
+        self.label_2.setText(f"Speed: {velocity} rps")
+
+    def on_velocity_changed(self, velocity):
+        self.update_velocity_display(velocity)
+        self.send_command(f"V{velocity}")
+
+    def stop_motor(self):
+        self.horizontalSlider.blockSignals(True)
+        self.horizontalSlider.setValue(0)
+        self.horizontalSlider.blockSignals(False)
+        self.update_velocity_display(0)
+        self.send_command("0")
+
     def send_command(self, command):
         if (
             self.socket.state()
@@ -575,6 +626,7 @@ class Ui_StringTheory(object):
         self.pushButton.setText("Connect to ESP32")
         self.update_status_display()
 
+    
     def on_ready_read(self):
         while self.socket.canReadLine():
             message = (
@@ -583,7 +635,26 @@ class Ui_StringTheory(object):
                 .strip()
             )
 
-            if message == "LED_IS_ON":
+            # ---------------- MOTOR TEMPERATURE ----------------
+            if message.startswith("MOTOR_TEMP:"):
+                try:
+                    temperature = float(
+                        message.split(":", 1)[1]
+                    )
+
+                    self.motor_temperature = temperature
+
+                    self.temperature_label.setText(
+                        f"Motor Temperature: {temperature:.1f} °C"
+                    )
+
+                except ValueError:
+                    self.temperature_label.setText(
+                        "Motor Temperature: Invalid reading"
+                    )
+
+            # ---------------- LED STATUS ----------------
+            elif message == "LED_IS_ON":
                 self.led_state = "ON"
                 self.connection_status = "Connected to ESP32"
 
@@ -591,10 +662,12 @@ class Ui_StringTheory(object):
                 self.led_state = "OFF"
                 self.connection_status = "Connected to ESP32"
 
+            # ---------------- OTHER MESSAGES ----------------
             elif message:
                 self.connection_status = f"ESP32: {message}"
 
             self.update_status_display()
+
 
     def on_error(self, error):
         self.connection_status = (
