@@ -11,8 +11,17 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFrame, QGraphicsView,
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+    QPalette, QPixmap, QRadialGradient, QShortcut, QTransform)
 import Images_rc
+
+
+class ResponsiveDialog(QDialog):
+    base_size = QSize(742, 477)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "ui"):
+            self.ui.apply_scale()
 
 
 class Ui_StringTheory(object):
@@ -20,6 +29,27 @@ class Ui_StringTheory(object):
         self.setupUi(window)
 
         self.window = window
+        self._base_fonts = {
+            widget: widget.font()
+            for widget in window.findChildren(QWidget)
+        }
+        self._base_spacers = self._collect_spacers(self.windowLayout)
+        self._base_dimensions = {
+            self.label_10: (None, 40),
+            self.label_14: (None, 40),
+            self.navigationSeparator: (None, 2),
+            self.pushButton: (None, 30),
+            self.pushButton_2: (30, 30),
+            self.pushButton_3: (30, 30),
+            self.pushButton_4: (None, 30),
+            self.pushButton_5: (None, 30),
+            self.pushButton_6: (150, 30),
+            self.graphicsView: (120, 70),
+            self.label_2: (None, 50),
+            self.label_11: (None, 120),
+            self.label_12: (None, 120),
+        }
+        self.apply_scale()
 
         # Same connection settings as your working example.
         self.esp32_ip = "192.168.4.1"
@@ -67,6 +97,8 @@ class Ui_StringTheory(object):
         self.pushButton_4.clicked.connect(self.send_led_on)
         self.pushButton_5.clicked.connect(self.send_led_off)
         self.pushButton_6.clicked.connect(self.stop_motor)
+        self.fullscreenShortcut.activated.connect(self.toggle_fullscreen)
+        self.exitFullscreenShortcut.activated.connect(self.exit_fullscreen)
 
         # Make the existing headings clickable on BOTH pages.
         self.configure_navigation_link(
@@ -102,6 +134,50 @@ class Ui_StringTheory(object):
         )
 
         self.update_status_display()
+
+    def _collect_spacers(self, layout):
+        spacers = []
+        for index in range(layout.count()):
+            item = layout.itemAt(index)
+            if item.spacerItem() is not None:
+                size = item.spacerItem().sizeHint()
+                spacers.append((item.spacerItem(), size.width(), size.height()))
+            elif item.layout() is not None:
+                spacers.extend(self._collect_spacers(item.layout()))
+        return spacers
+
+    def apply_scale(self):
+        scale = min(
+            self.window.width() / ResponsiveDialog.base_size.width(),
+            self.window.height() / ResponsiveDialog.base_size.height(),
+        )
+        scale = max(scale, 0.1)
+
+        for widget, base_font in self._base_fonts.items():
+            font = QFont(base_font)
+            if base_font.pointSizeF() > 0:
+                font.setPointSizeF(base_font.pointSizeF() * scale)
+            widget.setFont(font)
+
+        for widget, (base_width, base_height) in self._base_dimensions.items():
+            height = round(base_height * scale)
+            if base_width is None:
+                widget.setMinimumHeight(height)
+                widget.setMaximumHeight(height)
+            else:
+                size = QSize(round(base_width * scale), height)
+                widget.setMinimumSize(size)
+                widget.setMaximumSize(size)
+
+        for spacer, base_width, base_height in self._base_spacers:
+            spacer.changeSize(
+                round(base_width * scale),
+                round(base_height * scale),
+                spacer.sizePolicy().horizontalPolicy(),
+                spacer.sizePolicy().verticalPolicy(),
+            )
+
+        self.windowLayout.activate()
 
 
     def setupUi(self, StringTheory):
@@ -178,6 +254,19 @@ class Ui_StringTheory(object):
 
         self.windowLayout.addWidget(self.navigationBar)
         self.windowLayout.addWidget(self.stackedWidget)
+
+        self.fullscreenShortcut = QShortcut(QKeySequence("F11"), StringTheory)
+        self.fullscreenShortcut.setContext(
+            Qt.ShortcutContext.WindowShortcut
+        )
+        self.exitFullscreenShortcut = QShortcut(
+            QKeySequence("Escape"), StringTheory
+        )
+        self.exitFullscreenShortcut.setContext(
+            Qt.ShortcutContext.WindowShortcut
+        )
+        self._windowed_state = Qt.WindowState.WindowNoState
+        self._fullscreen_active = False
 
         self.controlPage = QWidget()
         self.controlPage.setObjectName(u"controlPage")
@@ -256,7 +345,6 @@ class Ui_StringTheory(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.horizontalSlider.sizePolicy().hasHeightForWidth())
         self.horizontalSlider.setSizePolicy(sizePolicy)
-        self.horizontalSlider.setMaximumSize(QSize(400, 16777215))
         self.horizontalSlider.setAutoFillBackground(False)
         self.horizontalSlider.setStyleSheet(u"color: rgb(15, 75, 235);"
                                             "border-color: rgb(15, 75, 235);"
@@ -532,6 +620,24 @@ class Ui_StringTheory(object):
         elif target == "control":
             self.stackedWidget.setCurrentWidget(self.controlPage)
 
+    def toggle_fullscreen(self):
+        if self._fullscreen_active or self.window.isFullScreen():
+            self.exit_fullscreen()
+            return
+
+        self._windowed_state = self.window.windowState()
+        self._fullscreen_active = True
+        self.window.showFullScreen()
+
+    def exit_fullscreen(self):
+        if not self._fullscreen_active and not self.window.isFullScreen():
+            return
+
+        self.window.showNormal()
+        if self._windowed_state & Qt.WindowState.WindowMaximized:
+            self.window.showMaximized()
+        self._fullscreen_active = False
+
     def update_status_display(self):
         # Show feedback without adding or moving any widgets.
         status = (
@@ -679,8 +785,9 @@ class Ui_StringTheory(object):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    window = QDialog()
+    window = ResponsiveDialog()
     ui = Ui_StringTheory(window)
+    window.ui = ui
 
     window.show()
     sys.exit(app.exec())
