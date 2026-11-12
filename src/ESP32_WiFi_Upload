@@ -1,0 +1,545 @@
+
+/*
+ *
+ *
+ * COPY PASTE INTO ARDUINO IDE
+ *
+ * 
+ * StringTheory - XIAO ESP32-C3 + ODrive
+ *
+ * Default mode: USB Serial, no Wi-Fi
+ * Optional mode: Wi-Fi access point + TCP server
+ *
+ * USB Serial baud: 115200
+ * ODrive UART baud: 19200
+ *
+ * XIAO ESP32-C3 wiring:
+ * D7 / GPIO20 (RX) <- ODrive TX
+ * D6 / GPIO21 (TX) -> ODrive RX
+ * GND              -> ODrive GND
+ * D3 / GPIO5       -> Neopixel
+ *
+ * USB Serial commands:
+ *   LEDOn
+ *   LEDOff
+ *   MotorOn
+ *   MotorOff
+ *   0
+ *   V15
+ *   V5
+ *   V0
+ *   ODRIVE_STATUS
+ *
+ * Optional Wi-Fi:
+ *   SSID: StringTheory
+ *   Password: 12345678
+ *   TCP port: 5000
+ *
+ * Requires:
+ *   ODriveUART library compatible with your ODrive firmware
+ */
+
+#include <Arduino.h>
+#include <ODriveUART.h>
+#include <HardwareSerial.h>
+#include <Adafruit_NeoPixel.h>
+
+// =====================================================
+// CONFIGURATION
+// =====================================================
+
+// 0 = USB Serial only (default)
+// 1 = Enable Wi-Fi access point and TCP server
+#define USE_WIFI 1
+
+#if USE_WIFI
+#include <WiFi.h>
+
+const char* AP_SSID = "StringTheory";
+const char* AP_PASSWORD = "12345678";
+
+WiFiServer server(5000);
+WiFiClient wifiClient;
+#endif
+
+
+
+// =====================================================
+// PINS
+// =====================================================
+
+// XIAO ESP32-C3 UART pins
+const int ODRIVE_RX_PIN = 20;  // D7: receives from ODrive TX
+const int ODRIVE_TX_PIN = 21;  // D6: transmits to ODrive RX
+
+// Regular onboard/external LED
+const int LED_PIN = D3;
+const int NUM_PIXELS = 5;
+
+Adafruit_NeoPixel strip(
+  NUM_PIXELS,
+  LED_PIN,
+  NEO_GRB + NEO_KHZ800
+);
+
+// Optional indicator output only.
+// This does NOT enable or power the ODrive motor.
+const int MOTOR_PIN = 4;
+
+// =====================================================
+// ODRIVE UART
+// =====================================================
+
+const unsigned long ODRIVE_BAUD = 19200;
+
+HardwareSerial odrive_serial(1);
+ODriveUART odrive(odrive_serial);
+
+// Velocity limits, in turns per second
+const float MIN_VEL = -150.0f;
+const float MAX_VEL = 150.0f;
+const float START_SPEED = 15.0f;
+
+// =====================================================
+// ODRIVE INITIALISATION STATE MACHINE
+// =====================================================
+
+enum ODriveInitState {
+  ODRIVE_WAITING,
+  ODRIVE_CLEARING,
+  ODRIVE_REQUESTING_CLOSED_LOOP,
+  ODRIVE_READY,
+  ODRIVE_FAILED
+};
+
+ODriveInitState odriveState = ODRIVE_WAITING;
+
+unsigned long odriveStateTimer = 0;
+unsigned long lastStateCheck = 0;
+
+const unsigned long ODRIVE_RESPONSE_TIMEOUT_MS = 10000;
+const unsigned long ODRIVE_CLEAR_ERRORS_DELAY_MS = 500;
+const unsigned long STATE_CHECK_INTERVAL_MS = 250;
+
+// =====================================================
+// ODRIVE STATUS
+// =====================================================
+
+bool odriveReady() {
+  return odriveState == ODRIVE_READY;
+}
+
+void printODriveStatus() {
+  Serial.println();
+  Serial.println("----- ODrive Status -----");
+
+  Serial.print("UART baud: ");
+  Serial.println(ODRIVE_BAUD);
+
+  Serial.print("Initialization state: ");
+  Serial.println((int)odriveState);
+
+  Serial.print("ODrive ready: ");
+  Serial.println(odriveReady() ? "YES" : "NO");
+
+  if (odriveReady()) {
+    Serial.print("Axis state: ");
+    Serial.println((int)odrive.getState());
+
+    Serial.print("DC voltage: ");
+    Serial.println(odrive.getParameterAsFloat("vbus_voltage"));
+
+    ODriveFeedback feedback = odrive.getFeedback();
+
+    Serial.print("Position: ");
+    Serial.println(feedback.pos);
+
+    Serial.print("Velocity: ");
+    Serial.println(feedback.vel);
+  }
+
+  Serial.println("-------------------------");
+}
+
+// =====================================================
+// ODRIVE INITIALISATION
+// =====================================================
+
+void updateODrive() {
+  unsigned long now = millis();
+
+  // Avoid continuously querying the ODrive
+  if (now - lastStateCheck < STATE_CHECK_INTERVAL_MS) {
+    return;
+  }
+
+  lastStateCheck = now;
+
+  switch (odriveState) {
+
+    case ODRIVE_WAITING: {
+      int state = odrive.getState();
+
+      if (state != AXIS_STATE_UNDEFINED) {
+        Serial.println("ODrive detected.");
+        Serial.println("Clearing ODrive errors...");
+
+        odrive.clearErrors();
+
+        odriveStateTimer = now;
+        odriveState = ODRIVE_CLEARING;
+      }
+      else if (now - odriveStateTimer >
+               ODRIVE_RESPONSE_TIMEOUT_MS) {
+        Serial.println("ERROR: ODrive not responding.");
+        Serial.println("Check UART pins, baud and wiring.");
+
+        odriveState = ODRIVE_FAILED;
+      }
+
+      break;
+    }
+
+    case ODRIVE_CLEARING: {
+      if (now - odriveStateTimer >=
+          ODRIVE_CLEAR_ERRORS_DELAY_MS) {
+
+        Serial.println("Requesting closed-loop control...");
+
+        odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+
+        odriveStateTimer = now;
+        odriveState = ODRIVE_REQUESTING_CLOSED_LOOP;
+      }
+
+      break;
+    }
+
+    case ODRIVE_REQUESTING_CLOSED_LOOP: {
+      int state = odrive.getState();
+
+      if (state == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+        Serial.println("ODrive running in closed-loop control.");
+
+        Serial.print("DC voltage: ");
+        Serial.println(
+          odrive.getParameterAsFloat("vbus_voltage")
+        );
+
+        odriveState = ODRIVE_READY;
+      }
+      else if (now - odriveStateTimer >
+               ODRIVE_RESPONSE_TIMEOUT_MS) {
+        Serial.print("ERROR: Closed-loop request failed. State: ");
+        Serial.println(state);
+
+        Serial.println(
+          "Check calibration, errors and motor configuration."
+        );
+
+        odriveState = ODRIVE_FAILED;
+      }
+
+      break;
+    }
+
+    case ODRIVE_READY:
+      // Motor commands can now be accepted.
+      break;
+
+    case ODRIVE_FAILED:
+      // Do not repeatedly clear faults or restart the motor.
+      break;
+  }
+}
+
+// =====================================================
+// COMMAND PROCESSING
+// =====================================================
+
+void processCommand(String command, Stream &reply) {
+  command.trim();
+
+  if (command.length() == 0) {
+    return;
+  }
+
+  Serial.print("Received command: ");
+  Serial.println(command);
+
+  // ---------------- LED ON ----------------
+  if (command == "LEDOn" || command == "LED_ON") {
+    for (int i = 0; i < NUM_PIXELS; i++) {
+        strip.setPixelColor(i, strip.Color(255, 255, 255));
+      }
+      strip.show();
+      Serial.println("LED ON");
+  }
+
+  // ---------------- LED OFF ----------------
+  else if (command == "LEDOff" || command == "LED_OFF") {
+    for (int i = 0; i < NUM_PIXELS; i++) {
+        strip.setPixelColor(i, strip.Color(0, 0, 0));
+      }
+      strip.show();
+      Serial.println("LED OFF");
+  }
+
+  // ---------------- MOTOR ON ----------------
+  else if (command == "MotorOn") {
+    if (!odriveReady()) {
+      reply.println("ERROR:ODRIVE_NOT_READY");
+      Serial.println("MotorOn ignored: ODrive not ready.");
+      return;
+    }
+
+    digitalWrite(MOTOR_PIN, HIGH);
+    odrive.setVelocity(START_SPEED);
+
+    reply.println("MOTOR_IS_ON");
+
+    Serial.print("Motor velocity set to: ");
+    Serial.println(START_SPEED);
+  }
+
+  // ---------------- MOTOR OFF ----------------
+  else if (command == "0" || command == "MotorOff") {
+    // Always permit a stop command, even if our
+    // software state says the ODrive is not ready.
+    odrive.setVelocity(0.0f);
+    digitalWrite(MOTOR_PIN, LOW);
+
+    reply.println("MOTOR_IS_OFF");
+    Serial.println("Motor stop command sent.");
+  }
+
+  // ---------------- SET VELOCITY ----------------
+  else if (command.startsWith("V")) {
+    if (!odriveReady()) {
+      reply.println("ERROR:ODRIVE_NOT_READY");
+      Serial.println("Velocity command ignored: ODrive not ready.");
+      return;
+    }
+
+    float velocity = command.substring(1).toFloat();
+
+    if (velocity < MIN_VEL) velocity = MIN_VEL;
+    if (velocity > MAX_VEL) velocity = MAX_VEL;
+
+    odrive.setVelocity(velocity);
+
+    digitalWrite(
+      MOTOR_PIN,
+      velocity != 0.0f ? HIGH : LOW
+    );
+
+    reply.print("VELOCITY_SET:");
+    reply.println(velocity);
+
+    Serial.print("Velocity set: ");
+    Serial.println(velocity);
+  }
+
+  // ---------------- ODRIVE STATUS ----------------
+  else if (command == "ODRIVE_STATUS") {
+    reply.print("ODRIVE_READY:");
+    reply.println(odriveReady() ? "YES" : "NO");
+
+    reply.print("ODRIVE_INIT_STATE:");
+    reply.println((int)odriveState);
+
+    if (odriveReady()) {
+      reply.print("AXIS_STATE:");
+      reply.println((int)odrive.getState());
+
+      reply.print("DC_VOLTAGE:");
+      reply.println(
+        odrive.getParameterAsFloat("vbus_voltage")
+      );
+
+      ODriveFeedback feedback = odrive.getFeedback();
+
+      reply.print("POSITION:");
+      reply.println(feedback.pos);
+
+      reply.print("VELOCITY:");
+      reply.println(feedback.vel);
+    }
+
+    printODriveStatus();
+  }
+
+  // ---------------- UNKNOWN COMMAND ----------------
+  else {
+    reply.println("ERROR:UNKNOWN_COMMAND");
+    Serial.println("Unknown command.");
+  }
+}
+
+// =====================================================
+// USB SERIAL INPUT
+// =====================================================
+
+void handleUSBSerial() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    processCommand(command, Serial);
+  }
+}
+
+// =====================================================
+// OPTIONAL WI-FI INPUT
+// =====================================================
+
+#if USE_WIFI
+
+void handleWiFi() {
+  // Accept a new client when no client is connected
+  if (!wifiClient || !wifiClient.connected()) {
+    WiFiClient newClient = server.available();
+
+    if (newClient) {
+      wifiClient = newClient;
+      Serial.println("PySide6 computer connected.");
+    }
+  }
+
+  if (wifiClient && wifiClient.connected()) {
+    if (wifiClient.available()) {
+      String command = wifiClient.readStringUntil('\n');
+      processCommand(command, wifiClient);
+    }
+  }
+}
+
+#endif
+
+// =====================================================
+// SETUP
+// =====================================================
+
+void setup() {
+  Serial.begin(115200);
+
+  // Allow USB serial monitor time to connect
+  delay(1000);
+
+  strip.begin();
+  strip.setBrightness(100);
+  strip.clear();
+  strip.show();
+
+  pinMode(MOTOR_PIN, OUTPUT);
+  digitalWrite(MOTOR_PIN, LOW);
+
+  // Initialise ODrive UART
+  odrive_serial.begin(
+    ODRIVE_BAUD,
+    SERIAL_8N1,
+    ODRIVE_RX_PIN,
+    ODRIVE_TX_PIN
+  );
+
+  Serial.println();
+  Serial.println("================================");
+  Serial.println("StringTheory ESP32-C3 Controller");
+  Serial.println("================================");
+
+  Serial.print("ODrive UART baud: ");
+  Serial.println(ODRIVE_BAUD);
+
+  Serial.print("ODrive RX GPIO: ");
+  Serial.println(ODRIVE_RX_PIN);
+
+  Serial.print("ODrive TX GPIO: ");
+  Serial.println(ODRIVE_TX_PIN);
+
+#if USE_WIFI
+
+  Serial.println("Starting Wi-Fi access point...");
+
+  WiFi.mode(WIFI_AP);
+
+  if (WiFi.softAP(AP_SSID, AP_PASSWORD)) {
+    Serial.println("Wi-Fi access point started.");
+
+    Serial.print("SSID: ");
+    Serial.println(AP_SSID);
+
+    Serial.print("Password: ");
+    Serial.println(AP_PASSWORD);
+
+    Serial.print("IP address: ");
+    Serial.println(WiFi.softAPIP());
+
+    Serial.println("TCP port: 5000");
+
+    server.begin();
+  }
+  else {
+    Serial.println("ERROR: Failed to start Wi-Fi.");
+  }
+
+#else
+
+  Serial.println("Wi-Fi disabled.");
+  Serial.println("Control the motor using USB Serial.");
+
+#endif
+
+  Serial.println();
+  Serial.println("Waiting for ODrive...");
+
+  odriveState = ODRIVE_WAITING;
+  odriveStateTimer = millis();
+  lastStateCheck = 0;
+}
+
+// =====================================================
+// MAIN LOOP
+// =====================================================
+
+
+void loop() {
+  // Keep checking ODrive without blocking on Wi-Fi
+  updateODrive();
+
+  // Print status and update the app every 2 seconds
+  static unsigned long lastStatus = 0;
+
+  if (millis() - lastStatus >= 2000) {
+    lastStatus = millis();
+
+    Serial.print("ODrive initialization state: ");
+    Serial.print((int)odriveState);
+
+    Serial.print(" | Ready: ");
+    Serial.println(odriveReady() ? "YES" : "NO");
+
+    if (odriveReady()) {
+      // Read the ODrive motor temperature
+      float motorTemp = odrive.getParameterAsFloat(
+        "axis0.motor.motor_thermistor.temperature"
+      );
+
+      // Display temperature in the USB Serial Monitor
+      Serial.print("Motor temperature: ");
+      Serial.print(motorTemp, 1);
+      Serial.println(" C");
+
+#if USE_WIFI
+      // Send the temperature to the PySide6 application
+      if (wifiClient && wifiClient.connected()) {
+        wifiClient.print("MOTOR_TEMP:");
+        wifiClient.println(motorTemp, 1);
+      }
+#endif
+    }
+  }
+
+#if USE_WIFI
+  handleWiFi();
+#else
+  handleUSBSerial();
+#endif
+}
